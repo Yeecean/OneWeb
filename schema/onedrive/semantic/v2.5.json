@@ -1,0 +1,414 @@
+{
+  "schema_version": "2.5",
+  "min_client_version": "2.5.0",
+  "options": [
+    {
+      "key": "sync_dir",
+      "type": "path",
+      "default": "~/OneDrive",
+      "description": "Directory where files will be synced",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "skip_dir",
+      "type": "string",
+      "default": "~/.local/share/onedrive",
+      "description": "Directories to skip during synchronization",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "skip_file",
+      "type": "string",
+      "default": "~*.tmp",
+      "description": "Files to skip during synchronization",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "skip_dotfiles",
+      "type": "bool",
+      "default": false,
+      "description": "Skip dot files and folders from synchronization",
+      "group": "sync"
+    },
+    {
+      "key": "skip_symlinks",
+      "type": "bool",
+      "default": false,
+      "description": "Skip symlinks from synchronization",
+      "group": "sync"
+    },
+    {
+      "key": "sync_root_files",
+      "type": "bool",
+      "default": false,
+      "description": "Sync files in the root of the OneDrive directory",
+      "group": "sync"
+    },
+    {
+      "key": "classify_as_big_delete",
+      "type": "string",
+      "default": "1000",
+      "description": "Number of files that triggers a 'big delete' safeguard",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "sync_business_shared_folders",
+      "type": "string",
+      "default": "",
+      "description": "Comma separated list of OneDrive Business shared folders to sync",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "sync_business_shared_items",
+      "type": "string",
+      "default": "",
+      "description": "Comma separated list of OneDrive Business shared items to sync",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "webhook_enabled",
+      "type": "bool",
+      "default": true,
+      "description": "Enable webhook based local change detection",
+      "group": "sync"
+    },
+    {
+      "key": "webhook_expiration_interval",
+      "type": "string",
+      "default": "0",
+      "description": "Custom webhook expiration interval in hours",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "webhook_ping_interval",
+      "type": "int",
+      "default": 0,
+      "description": "Custom webhook ping interval in seconds",
+      "group": "sync",
+      "constraints": { "min": 0, "max": 3600 }
+    },
+    {
+      "key": "webhook_timeout",
+      "type": "int",
+      "default": 300,
+      "description": "Custom webhook timeout in seconds",
+      "group": "sync",
+      "constraints": { "min": 0, "max": 3600 }
+    },
+    {
+      "key": "monitor_interval",
+      "type": "string",
+      "default": "300",
+      "description": "Monitor interval in seconds for remote changes",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "min_notify_changes",
+      "type": "int",
+      "default": 5,
+      "description": "Minimum number of remote changes before notifying",
+      "group": "sync",
+      "constraints": { "min": 1, "max": 1000 }
+    },
+    {
+      "key": "log_frequency",
+      "type": "int",
+      "default": 14400,
+      "description": "Frequency of sync log output in seconds",
+      "group": "logging",
+      "constraints": { "min": 1, "max": 86400 }
+    },
+    {
+      "key": "verbose",
+      "type": "bool",
+      "default": false,
+      "description": "Verbose log output",
+      "group": "logging"
+    },
+    {
+      "key": "debug_https",
+      "type": "bool",
+      "default": false,
+      "description": "Enable HTTPS debug logging",
+      "group": "logging"
+    },
+    {
+      "key": "disable_notifications",
+      "type": "bool",
+      "default": false,
+      "description": "Disable desktop notifications",
+      "group": "logging"
+    },
+    {
+      "key": "disable_upload_validation",
+      "type": "bool",
+      "default": false,
+      "description": "Disable upload validation",
+      "group": "sync"
+    },
+    {
+      "key": "enable_logging",
+      "type": "bool",
+      "default": false,
+      "description": "Enable client logging",
+      "group": "logging"
+    },
+    {
+      "key": "force_http_11",
+      "type": "bool",
+      "default": false,
+      "description": "Force HTTP/1.1 for all operations",
+      "group": "performance"
+    },
+    {
+      "key": "threads",
+      "type": "int",
+      "default": 8,
+      "description": "Number of worker threads for uploads/downloads",
+      "group": "performance",
+      "constraints": { "min": 1, "max": 16 }
+    },
+    {
+      "key": "upload_threads",
+      "type": "int",
+      "default": 4,
+      "description": "Number of upload worker threads",
+      "group": "performance",
+      "constraints": { "min": 1, "max": 16 }
+    },
+    {
+      "key": "download_threads",
+      "type": "int",
+      "default": 4,
+      "description": "Number of download worker threads",
+      "group": "performance",
+      "constraints": { "min": 1, "max": 16 }
+    },
+    {
+      "key": "check_nomount",
+      "type": "string",
+      "default": "",
+      "description": "Prevent sync when path is a mountpoint",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "check_nosync",
+      "type": "string",
+      "default": "",
+      "description": "Prevent sync when path is mounted with no sync option",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "cleanup_local_files",
+      "type": "bool",
+      "default": false,
+      "description": "Cleanup local files when they are deleted remotely",
+      "group": "sync"
+    },
+    {
+      "key": "disable_permission_validation",
+      "type": "bool",
+      "default": false,
+      "description": "Disable permission validation",
+      "group": "sync"
+    },
+    {
+      "key": "disable_upload_v2",
+      "type": "bool",
+      "default": false,
+      "description": "Disable the new upload V2 method",
+      "group": "sync"
+    },
+    {
+      "key": "disable_upload_v1",
+      "type": "bool",
+      "default": false,
+      "description": "Disable the older upload V1 method",
+      "group": "sync"
+    },
+    {
+      "key": "bypass_data_movement_worker",
+      "type": "bool",
+      "default": false,
+      "description": "Enable sync operations via command line only",
+      "group": "sync"
+    },
+    {
+      "key": "dns_timeout",
+      "type": "string",
+      "default": "15",
+      "description": "DNS resolution timeout in seconds",
+      "group": "performance",
+      "constraints": {}
+    },
+    {
+      "key": "connect_timeout",
+      "type": "string",
+      "default": "10",
+      "description": "Connection timeout in seconds",
+      "group": "performance",
+      "constraints": {}
+    },
+    {
+      "key": "http_response_timeout",
+      "type": "string",
+      "default": "300",
+      "description": "HTTP response timeout in seconds",
+      "group": "performance",
+      "constraints": {}
+    },
+    {
+      "key": "local_first",
+      "type": "bool",
+      "default": false,
+      "description": "Sync local files first before remote",
+      "group": "sync"
+    },
+    {
+      "key": "resync",
+      "type": "bool",
+      "default": false,
+      "description": "Force a full re-synchronization",
+      "group": "sync"
+    },
+    {
+      "key": "force_https",
+      "type": "bool",
+      "default": false,
+      "description": "Force HTTPS for all operations",
+      "group": "performance"
+    },
+    {
+      "key": "remove_source_files",
+      "type": "bool",
+      "default": false,
+      "description": "Remove source file after upload",
+      "group": "sync"
+    },
+    {
+      "key": "sync_dir_permissions",
+      "type": "string",
+      "default": "",
+      "description": "Permissions to apply to sync_dir",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "sync_file_permissions",
+      "type": "string",
+      "default": "",
+      "description": "Permissions to apply to synced files",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "sync_file_acl",
+      "type": "bool",
+      "default": false,
+      "description": "Enable POSIX ACL support",
+      "group": "sync"
+    },
+    {
+      "key": "sync_file_xattrs",
+      "type": "string",
+      "default": "",
+      "description": "Enable xattr support",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "application_id",
+      "type": "string",
+      "default": "",
+      "description": "Override the application id used for OAuth",
+      "group": "auth",
+      "constraints": {}
+    },
+    {
+      "key": "azure_ad_endpoint",
+      "type": "string",
+      "default": "",
+      "description": "Azure AD endpoint override",
+      "group": "auth",
+      "constraints": {}
+    },
+    {
+      "key": "azure_ad_tenant",
+      "type": "string",
+      "default": "",
+      "description": "Azure AD tenant override",
+      "group": "auth",
+      "constraints": {}
+    },
+    {
+      "key": "client_id",
+      "type": "string",
+      "default": "",
+      "description": "Custom client id for OAuth",
+      "group": "auth",
+      "constraints": {}
+    },
+    {
+      "key": "client_secret",
+      "type": "string",
+      "default": "",
+      "description": "Custom client secret for OAuth",
+      "group": "auth",
+      "constraints": {}
+    },
+    {
+      "key": "configurable_auth",
+      "type": "bool",
+      "default": false,
+      "description": "Allow configurable authentication via browser",
+      "group": "auth"
+    },
+    {
+      "key": "debug_httpx",
+      "type": "bool",
+      "default": false,
+      "description": "Enable HTTPX debug logging",
+      "group": "logging"
+    },
+    {
+      "key": "use_device_auth",
+      "type": "bool",
+      "default": false,
+      "description": "Use device code OAuth flow",
+      "group": "auth"
+    },
+    {
+      "key": "use_intune_sso",
+      "type": "bool",
+      "default": false,
+      "description": "Use Intune SSO for authentication",
+      "group": "auth"
+    },
+    {
+      "key": "usage_percent_threshold",
+      "type": "string",
+      "default": "",
+      "description": "Notify when usage exceeds threshold percentage",
+      "group": "sync",
+      "constraints": {}
+    },
+    {
+      "key": "user_agent",
+      "type": "string",
+      "default": "",
+      "description": "Custom user agent string",
+      "group": "performance",
+      "constraints": {}
+    }
+  ]
+}

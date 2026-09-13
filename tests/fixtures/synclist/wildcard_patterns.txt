@@ -1,0 +1,4 @@
+/Documents/*.doc
+/Images/photo-*.jpg
+/Videos/**/*.mp4
+/Pictures/2024/0*.jpg

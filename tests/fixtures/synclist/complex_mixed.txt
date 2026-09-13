@@ -1,0 +1,10 @@
+# Sync complex mixed rules
+/Documents/**
+!/Documents/Private
+/Documents/Private/Keep
+/Projects/*
+!/Projects/Archive
+/Pictures/2024/**
+
+
+# trailing comment

@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  oneweb:
+    build:
+      context: ../..
+      dockerfile: packaging/docker/Dockerfile
+    image: oneweb:latest
+    container_name: oneweb
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${HOME}/.config:/home/user/.config
+    environment:
+      - XDG_CONFIG_HOME=/home/user/.config
+    restart: unless-stopped

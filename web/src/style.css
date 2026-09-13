@@ -1,0 +1,21 @@
+:root {
+  --oneweb-primary: #0d9488;
+  --oneweb-bg: #f8fafc;
+  --oneweb-border: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  background: var(--oneweb-bg);
+  color: #1e293b;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}

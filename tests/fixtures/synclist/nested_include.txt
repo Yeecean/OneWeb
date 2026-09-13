@@ -1,0 +1,4 @@
+/Documents
+/Documents/Projects
+/Documents/Projects/Code
+/Videos/Tutorials
