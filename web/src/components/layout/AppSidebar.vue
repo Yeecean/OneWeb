@@ -6,10 +6,19 @@ import { useProfileStore } from '@/stores/profile'
 const route = useRoute()
 const profileStore = useProfileStore()
 
-const links = computed(() => [
-  { to: '/', label: '概览', icon: '◉' },
-  { to: '/profiles', label: 'Profile', icon: '▤' },
-])
+const links = computed(() => {
+  const base = [{ to: '/', label: '概览', icon: '◉' }]
+  if (profileStore.profiles.length > 0) {
+    const defaultId = (route.params.id as string) || profileStore.profiles[0].id
+    base.push(
+      { to: `/profiles/${defaultId}/config`, label: '配置中心', icon: '⚙' },
+      { to: `/profiles/${defaultId}/runtime`, label: '服务运行时', icon: '⚡' },
+      { to: `/profiles/${defaultId}/synclist`, label: '选择性同步', icon: '📁' },
+    )
+  }
+  base.push({ to: '/profiles', label: '账号管理', icon: '👤' })
+  return base
+})
 </script>
 
 <template>

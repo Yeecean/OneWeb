@@ -25,6 +25,16 @@ func (h *ProfileHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, profiles)
 }
 
+// Discover 处理 POST /api/v1/profiles/discover，重新扫描宿主机。
+func (h *ProfileHandler) Discover(w http.ResponseWriter, r *http.Request) {
+	profiles, err := h.Svc.AutoDiscoverProfiles()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error(), nil)
+		return
+	}
+	writeJSON(w, http.StatusOK, profiles)
+}
+
 // Create 处理 POST /api/v1/profiles。
 func (h *ProfileHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req application.CreateProfileRequest

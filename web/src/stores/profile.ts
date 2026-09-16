@@ -38,5 +38,16 @@ export const useProfileStore = defineStore('profile', () => {
     await fetchAll()
   }
 
-  return { profiles, loading, error, loaded, fetchAll, create, remove }
+  async function discover() {
+    loading.value = true
+    try {
+      profiles.value = await api.discoverProfiles()
+    } catch (e: any) {
+      error.value = e.message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { profiles, loading, error, loaded, fetchAll, create, remove, discover }
 })

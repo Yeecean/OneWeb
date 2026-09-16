@@ -46,3 +46,8 @@ export async function updateProfile(id: string, req: UpdateProfileRequest): Prom
 export async function deleteProfile(id: string): Promise<void> {
   await client.delete(`/profiles/${id}`)
 }
+
+export async function discoverProfiles(): Promise<Profile[]> {
+  const { data } = await client.post('/profiles/discover')
+  return data
+}

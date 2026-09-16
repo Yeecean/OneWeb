@@ -49,6 +49,7 @@ func NewRouter(deps *Dependencies) http.Handler {
 		r.Route("/profiles", func(r chi.Router) {
 			r.Get("/", profileH.List)
 			r.Post("/", profileH.Create)
+			r.Post("/discover", profileH.Discover)
 			r.Route("/{profileID}", func(r chi.Router) {
 				r.Get("/", profileH.Get)
 				r.Patch("/", profileH.Update)

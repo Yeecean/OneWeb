@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/yeecean/oneweb/internal/domain/profile"
 	"github.com/yeecean/oneweb/internal/infrastructure/onedrive"
@@ -39,9 +41,92 @@ func NewProfileService(repo profile.ProfileRepository, cli *onedrive.CLIExecutor
 	return &ProfileService{Repo: repo, CLI: cli}
 }
 
-// ListProfiles 返回全部 Profile。
-func (s *ProfileService) ListProfiles() ([]profile.Profile, error) {
+// detectDefaultSystemdTarget 探测系统是否存在 onedrive.service 单元。
+func (s *ProfileService) detectDefaultSystemdTarget() string {
+	cmd := exec.Command("systemctl", "--user", "list-unit-files", "onedrive.service")
+	if out, err := cmd.Output(); err == nil && strings.Contains(string(out), "onedrive.service") {
+		return "onedrive.service"
+	}
+	return "onedrive@default.service"
+}
+
+// AutoDiscoverProfiles 扫描宿主机配置目录与 systemd 服务，自动注册现有或默认 Profile。
+func (s *ProfileService) AutoDiscoverProfiles() ([]profile.Profile, error) {
+	home, _ := os.UserHomeDir()
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" && home != "" {
+		configDir = filepath.Join(home, ".config")
+	}
+	if configDir == "" {
+		return s.Repo.List()
+	}
+
+	defaultTarget := s.detectDefaultSystemdTarget()
+
+	// 1. 优先探测默认目录 ~/.config/onedrive
+	defaultDir := filepath.Join(configDir, "onedrive")
+	if fi, err := os.Stat(defaultDir); err == nil && fi.IsDir() {
+		if _, err := s.Repo.Get("default"); err != nil {
+			p := profile.Profile{
+				ID:            "default",
+				DisplayName:   "个人 OneDrive",
+				ConfDir:       defaultDir,
+				RuntimeType:   profile.RuntimeSystemd,
+				RuntimeTarget: defaultTarget,
+			}
+			_ = s.Repo.Save(p)
+		}
+	}
+
+	// 2. 扫描多账号目录 ~/.config/onedrive-*
+	if entries, err := os.ReadDir(configDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() && strings.HasPrefix(entry.Name(), "onedrive-") {
+				suffix := strings.TrimPrefix(entry.Name(), "onedrive-")
+				if suffix == "" {
+					continue
+				}
+				if _, err := s.Repo.Get(suffix); err != nil {
+					p := profile.Profile{
+						ID:            suffix,
+						DisplayName:   fmt.Sprintf("OneDrive (%s)", suffix),
+						ConfDir:       filepath.Join(configDir, entry.Name()),
+						RuntimeType:   profile.RuntimeSystemd,
+						RuntimeTarget: fmt.Sprintf("onedrive@%s.service", suffix),
+					}
+					_ = s.Repo.Save(p)
+				}
+			}
+		}
+	}
+
+	// 3. 若宿主机全新、未找到任何既有目录，自动预置标准 default 账户，实现零配置开箱即用
+	list, err := s.Repo.List()
+	if err == nil && len(list) == 0 {
+		_ = os.MkdirAll(defaultDir, 0o755)
+		p := profile.Profile{
+			ID:            "default",
+			DisplayName:   "个人 OneDrive",
+			ConfDir:       defaultDir,
+			RuntimeType:   profile.RuntimeSystemd,
+			RuntimeTarget: defaultTarget,
+		}
+		_ = s.Repo.Save(p)
+	}
+
 	return s.Repo.List()
+}
+
+// ListProfiles 返回全部 Profile；若当前无任何 Profile 则自动扫描并初始化。
+func (s *ProfileService) ListProfiles() ([]profile.Profile, error) {
+	profiles, err := s.Repo.List()
+	if err != nil {
+		return nil, err
+	}
+	if len(profiles) == 0 {
+		return s.AutoDiscoverProfiles()
+	}
+	return profiles, nil
 }
 
 // CreateProfile 创建 Profile，校验 confdir 与运行时类型。
