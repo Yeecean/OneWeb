@@ -129,23 +129,23 @@ docker compose ps
 
 ## 4. 核心功能操作指南
 
-### 4.1 Profile（配置轮廓）管理
+### 4.1 账号与 Profile 管理
 
 OneWeb 使用 **Profile** 抽象每一个独立的 OneDrive 配置实例。
 
-#### 创建 Profile
-1. 在左侧导航栏点击 **「Profiles」**，点击右上角 **「新建 Profile」**。
-2. 填写必要元数据：
-   - **标识符 (ID)**：唯一英数字符串（如 `personal`、`work`）。
-   - **显示名称**：便于识别的友好名称（如 `个人 OneDrive`）。
-   - **配置目录 (ConfDir)**：对应 OneDrive 配置文件夹路径（默认如 `~/.config/onedrive`；多账号可设为 `~/.config/onedrive-work`）。
-   - **运行时类型**：目前支持 `systemd`。
-   - **Systemd 单元名**：指定控制的服务单元，默认格式为 `onedrive@<id>.service`（亦可填写自定义 unit 如 `onedrive.service`）。
-3. 点击 **「创建」**，系统将自动自检配置目录及关联状态。
+#### 开箱即用：零配置自动探测 (Auto-Discovery)
+- **首次启动自动接入**：OneWeb 首次启动时会自动扫描宿主机（如默认目录 `~/.config/onedrive` 及系统服务 `onedrive.service`），自动完成默认账户（`default`）注册。
+- **无需手动输入**：绝大多数单账号用户进入系统后直接即可看到当前账户的主控制台，无需进行任何初始配置或手动填写路径。
 
-#### 安全删除 Profile
-- 在 Profile 详情页点击 **「删除」**。
-- **安全保障**：删除操作仅移除 OneWeb 的配置映射元数据（`~/.config/oneweb/profiles.json`），**绝对不会删除您的云端数据、本地同步文件夹 (`sync_dir`) 或授权令牌**。
+#### 添加额外的 OneDrive 账号（多账号高级功能）
+如果您需要在同一台机器上挂载第二个 OneDrive 账号（例如同时登录企业版与个人版）：
+1. 在左侧导航栏点击 **「账号管理」**，点击右上角 **「+ 添加新账号」**。
+2. 输入账号唯一标识（如 `work`），系统会自动为您预填推荐的配置目录（`~/.config/onedrive-work`）与服务单元（`onedrive@work.service`）。
+3. 点击 **「确定添加」** 即可。如需重新扫描系统中由外部创建的目录，亦可直接点击 **「🔍 重新扫描宿主机账号」**。
+
+#### 安全解绑 Profile
+- 在账号列表中点击 **「解绑」**，或进入详情页点击 **「删除」**。
+- **安全保障**：解绑操作仅移除 OneWeb 的配置映射元数据（`~/.config/oneweb/profiles.json`），**绝对不会删除您的云端数据、本地同步文件夹 (`sync_dir`) 或授权令牌**。
 
 ---
 
