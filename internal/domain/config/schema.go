@@ -27,14 +27,15 @@ type Constraints struct {
 
 // OptionSchema 描述单个配置项的语义定义。
 type OptionSchema struct {
-	Key         string       `json:"key"`
-	Type        ValueType    `json:"type"`
-	Default     interface{}  `json:"default,omitempty"`
-	Description string       `json:"description,omitempty"`
-	MinVersion  string       `json:"min_version,omitempty"`
-	Constraints *Constraints `json:"constraints,omitempty"`
-	Deprecated  bool         `json:"deprecated,omitempty"`
-	Group       string       `json:"group,omitempty"`
+	Key           string       `json:"key"`
+	Type          ValueType    `json:"type"`
+	Default       interface{}  `json:"default,omitempty"`
+	Description   string       `json:"description,omitempty"`
+	DescriptionZh string       `json:"description_zh,omitempty"`
+	MinVersion    string       `json:"min_version,omitempty"`
+	Constraints   *Constraints `json:"constraints,omitempty"`
+	Deprecated    bool         `json:"deprecated,omitempty"`
+	Group         string       `json:"group,omitempty"`
 }
 
 // ConfigSchema 描述一组配置项。

@@ -5,6 +5,7 @@ export interface OptionSchema {
   type: string
   default?: any
   description?: string
+  description_zh?: string
   min_version?: string
   constraints?: { min?: number; max?: number; allowed_values?: string[] }
   deprecated?: boolean

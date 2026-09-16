@@ -77,7 +77,12 @@ function hasFileValue(key: string): boolean {
             <span v-if="hasFileValue(opt.key)" class="tag">文件已设置</span>
             <span v-else-if="!isDefault(opt.key)" class="tag blue">非默认</span>
           </div>
-          <p class="option-desc">{{ opt.description }}</p>
+          <p class="option-desc">
+            <span v-if="opt.description_zh" class="desc-zh">{{ opt.description_zh }}</span>
+            <span class="desc-en" :class="{ 'with-zh': opt.description_zh }">
+              {{ opt.description }}
+            </span>
+          </p>
 
           <div class="option-control">
             <template v-if="widgetFor(opt).widget === 'switch'">
@@ -179,6 +184,17 @@ function hasFileValue(key: string): boolean {
   color: #64748b;
   font-size: 12px;
   margin: 6px 0 10px;
+}
+.desc-zh {
+  display: block;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 2px;
+}
+.desc-en {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
 }
 .option-control {
   display: flex;

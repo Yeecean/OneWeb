@@ -7,6 +7,7 @@
       "type": "path",
       "default": "~/OneDrive",
       "description": "Directory where files will be synced",
+      "description_zh": "同步目录路径（OneDrive 文件将下载到此本地目录）",
       "group": "sync",
       "constraints": {}
     },
@@ -15,6 +16,7 @@
       "type": "string",
       "default": "~/.local/share/onedrive",
       "description": "Directories to skip during synchronization",
+      "description_zh": "同步时跳过的目录（支持通配符，多个目录用 | 分隔）",
       "group": "sync",
       "constraints": {}
     },
@@ -23,6 +25,7 @@
       "type": "string",
       "default": "~*.tmp",
       "description": "Files to skip during synchronization",
+      "description_zh": "同步时跳过的文件（支持通配符，多个文件用 | 分隔）",
       "group": "sync",
       "constraints": {}
     },
@@ -31,6 +34,7 @@
       "type": "bool",
       "default": false,
       "description": "Skip dot files and folders from synchronization",
+      "description_zh": "是否跳过以点（.）开头的隐藏文件和文件夹",
       "group": "sync"
     },
     {
@@ -38,6 +42,7 @@
       "type": "bool",
       "default": false,
       "description": "Skip symlinks from synchronization",
+      "description_zh": "是否跳过符号链接文件",
       "group": "sync"
     },
     {
@@ -45,6 +50,7 @@
       "type": "bool",
       "default": false,
       "description": "Sync files in the root of the OneDrive directory",
+      "description_zh": "是否同步 OneDrive 根目录下的文件（默认仅同步文件夹）",
       "group": "sync"
     },
     {
@@ -52,6 +58,7 @@
       "type": "string",
       "default": "1000",
       "description": "Number of files that triggers a 'big delete' safeguard",
+      "description_zh": "触发「大量删除」保护机制的文件数量阈值",
       "group": "sync",
       "constraints": {}
     },
@@ -60,6 +67,7 @@
       "type": "string",
       "default": "",
       "description": "Comma separated list of OneDrive Business shared folders to sync",
+      "description_zh": "要同步的 OneDrive 商业版共享文件夹（逗号分隔）",
       "group": "sync",
       "constraints": {}
     },
@@ -68,6 +76,7 @@
       "type": "string",
       "default": "",
       "description": "Comma separated list of OneDrive Business shared items to sync",
+      "description_zh": "要同步的 OneDrive 商业版共享条目（逗号分隔）",
       "group": "sync",
       "constraints": {}
     },
@@ -76,6 +85,7 @@
       "type": "bool",
       "default": true,
       "description": "Enable webhook based local change detection",
+      "description_zh": "是否启用 Webhook 以实时检测本地文件变动",
       "group": "sync"
     },
     {
@@ -83,6 +93,7 @@
       "type": "string",
       "default": "0",
       "description": "Custom webhook expiration interval in hours",
+      "description_zh": "Webhook 订阅过期时间间隔（小时）",
       "group": "sync",
       "constraints": {}
     },
@@ -91,22 +102,31 @@
       "type": "int",
       "default": 0,
       "description": "Custom webhook ping interval in seconds",
+      "description_zh": "Webhook 心跳间隔（秒）",
       "group": "sync",
-      "constraints": { "min": 0, "max": 3600 }
+      "constraints": {
+        "min": 0,
+        "max": 3600
+      }
     },
     {
       "key": "webhook_timeout",
       "type": "int",
       "default": 300,
       "description": "Custom webhook timeout in seconds",
+      "description_zh": "Webhook 响应超时时间（秒）",
       "group": "sync",
-      "constraints": { "min": 0, "max": 3600 }
+      "constraints": {
+        "min": 0,
+        "max": 3600
+      }
     },
     {
       "key": "monitor_interval",
       "type": "string",
       "default": "300",
       "description": "Monitor interval in seconds for remote changes",
+      "description_zh": "后台监控模式下每次同步的间隔时间（秒，默认 300）",
       "group": "sync",
       "constraints": {}
     },
@@ -115,22 +135,31 @@
       "type": "int",
       "default": 5,
       "description": "Minimum number of remote changes before notifying",
+      "description_zh": "触发同步通知的最小变更文件数",
       "group": "sync",
-      "constraints": { "min": 1, "max": 1000 }
+      "constraints": {
+        "min": 1,
+        "max": 1000
+      }
     },
     {
       "key": "log_frequency",
       "type": "int",
       "default": 14400,
       "description": "Frequency of sync log output in seconds",
+      "description_zh": "监控模式下日志输出频率（秒）",
       "group": "logging",
-      "constraints": { "min": 1, "max": 86400 }
+      "constraints": {
+        "min": 1,
+        "max": 86400
+      }
     },
     {
       "key": "verbose",
       "type": "bool",
       "default": false,
       "description": "Verbose log output",
+      "description_zh": "是否开启详细日志输出（调试用）",
       "group": "logging"
     },
     {
@@ -138,6 +167,7 @@
       "type": "bool",
       "default": false,
       "description": "Enable HTTPS debug logging",
+      "description_zh": "是否调试 HTTPS 通信内容",
       "group": "logging"
     },
     {
@@ -145,6 +175,7 @@
       "type": "bool",
       "default": false,
       "description": "Disable desktop notifications",
+      "description_zh": "是否禁用桌面通知",
       "group": "logging"
     },
     {
@@ -152,6 +183,7 @@
       "type": "bool",
       "default": false,
       "description": "Disable upload validation",
+      "description_zh": "是否禁用上传文件完整性校验",
       "group": "sync"
     },
     {
@@ -159,6 +191,7 @@
       "type": "bool",
       "default": false,
       "description": "Enable client logging",
+      "description_zh": "是否将运行日志写入独立日志文件",
       "group": "logging"
     },
     {
@@ -166,6 +199,7 @@
       "type": "bool",
       "default": false,
       "description": "Force HTTP/1.1 for all operations",
+      "description_zh": "强制使用 HTTP/1.1（遇到兼容性问题时使用）",
       "group": "performance"
     },
     {
@@ -173,30 +207,43 @@
       "type": "int",
       "default": 8,
       "description": "Number of worker threads for uploads/downloads",
+      "description_zh": "并行上传/下载线程总数",
       "group": "performance",
-      "constraints": { "min": 1, "max": 16 }
+      "constraints": {
+        "min": 1,
+        "max": 16
+      }
     },
     {
       "key": "upload_threads",
       "type": "int",
       "default": 4,
       "description": "Number of upload worker threads",
+      "description_zh": "并行上传线程数",
       "group": "performance",
-      "constraints": { "min": 1, "max": 16 }
+      "constraints": {
+        "min": 1,
+        "max": 16
+      }
     },
     {
       "key": "download_threads",
       "type": "int",
       "default": 4,
       "description": "Number of download worker threads",
+      "description_zh": "并行下载线程数",
       "group": "performance",
-      "constraints": { "min": 1, "max": 16 }
+      "constraints": {
+        "min": 1,
+        "max": 16
+      }
     },
     {
       "key": "check_nomount",
       "type": "string",
       "default": "",
       "description": "Prevent sync when path is a mountpoint",
+      "description_zh": "是否检查同步目录是否为挂载点（挂载点则停止同步）",
       "group": "sync",
       "constraints": {}
     },
@@ -205,6 +252,7 @@
       "type": "string",
       "default": "",
       "description": "Prevent sync when path is mounted with no sync option",
+      "description_zh": "是否检查目录中的 .nosync 标记文件",
       "group": "sync",
       "constraints": {}
     },
@@ -213,6 +261,7 @@
       "type": "bool",
       "default": false,
       "description": "Cleanup local files when they are deleted remotely",
+      "description_zh": "是否清理本地多余文件（仅限下载模式）",
       "group": "sync"
     },
     {
@@ -220,6 +269,7 @@
       "type": "bool",
       "default": false,
       "description": "Disable permission validation",
+      "description_zh": "是否禁用文件权限校验",
       "group": "sync"
     },
     {
@@ -227,6 +277,7 @@
       "type": "bool",
       "default": false,
       "description": "Disable the new upload V2 method",
+      "description_zh": "是否禁用上传 v2 协议",
       "group": "sync"
     },
     {
@@ -234,6 +285,7 @@
       "type": "bool",
       "default": false,
       "description": "Disable the older upload V1 method",
+      "description_zh": "是否禁用上传 v1 协议",
       "group": "sync"
     },
     {
@@ -241,6 +293,7 @@
       "type": "bool",
       "default": false,
       "description": "Enable sync operations via command line only",
+      "description_zh": "是否绕过数据移动 Worker（仅用命令行执行同步）",
       "group": "sync"
     },
     {
@@ -248,6 +301,7 @@
       "type": "string",
       "default": "15",
       "description": "DNS resolution timeout in seconds",
+      "description_zh": "DNS 解析超时时间（秒）",
       "group": "performance",
       "constraints": {}
     },
@@ -256,6 +310,7 @@
       "type": "string",
       "default": "10",
       "description": "Connection timeout in seconds",
+      "description_zh": "TCP 连接超时时间（秒）",
       "group": "performance",
       "constraints": {}
     },
@@ -264,6 +319,7 @@
       "type": "string",
       "default": "300",
       "description": "HTTP response timeout in seconds",
+      "description_zh": "HTTP 响应超时时间（秒）",
       "group": "performance",
       "constraints": {}
     },
@@ -272,6 +328,7 @@
       "type": "bool",
       "default": false,
       "description": "Sync local files first before remote",
+      "description_zh": "是否优先上传本地文件后再下载云端文件",
       "group": "sync"
     },
     {
@@ -279,6 +336,7 @@
       "type": "bool",
       "default": false,
       "description": "Force a full re-synchronization",
+      "description_zh": "是否执行完整重同步（忽略本地状态数据库）",
       "group": "sync"
     },
     {
@@ -286,6 +344,7 @@
       "type": "bool",
       "default": false,
       "description": "Force HTTPS for all operations",
+      "description_zh": "强制使用 HTTPS",
       "group": "performance"
     },
     {
@@ -293,6 +352,7 @@
       "type": "bool",
       "default": false,
       "description": "Remove source file after upload",
+      "description_zh": "上传后是否删除本地源文件（仅限上传模式）",
       "group": "sync"
     },
     {
@@ -300,6 +360,7 @@
       "type": "string",
       "default": "",
       "description": "Permissions to apply to sync_dir",
+      "description_zh": "同步目录权限（八进制，如 755）",
       "group": "sync",
       "constraints": {}
     },
@@ -308,6 +369,7 @@
       "type": "string",
       "default": "",
       "description": "Permissions to apply to synced files",
+      "description_zh": "同步文件权限（八进制，如 644）",
       "group": "sync",
       "constraints": {}
     },
@@ -316,6 +378,7 @@
       "type": "bool",
       "default": false,
       "description": "Enable POSIX ACL support",
+      "description_zh": "是否同步 POSIX ACL 权限",
       "group": "sync"
     },
     {
@@ -323,6 +386,7 @@
       "type": "string",
       "default": "",
       "description": "Enable xattr support",
+      "description_zh": "是否同步扩展属性（xattrs）",
       "group": "sync",
       "constraints": {}
     },
@@ -331,6 +395,7 @@
       "type": "string",
       "default": "",
       "description": "Override the application id used for OAuth",
+      "description_zh": "微软 Azure AD 应用程序 ID",
       "group": "auth",
       "constraints": {}
     },
@@ -339,6 +404,7 @@
       "type": "string",
       "default": "",
       "description": "Azure AD endpoint override",
+      "description_zh": "Azure AD 认证端点 URL",
       "group": "auth",
       "constraints": {}
     },
@@ -347,6 +413,7 @@
       "type": "string",
       "default": "",
       "description": "Azure AD tenant override",
+      "description_zh": "Azure AD 租户 ID",
       "group": "auth",
       "constraints": {}
     },
@@ -355,6 +422,7 @@
       "type": "string",
       "default": "",
       "description": "Custom client id for OAuth",
+      "description_zh": "OAuth2 客户端 ID",
       "group": "auth",
       "constraints": {}
     },
@@ -363,6 +431,7 @@
       "type": "string",
       "default": "",
       "description": "Custom client secret for OAuth",
+      "description_zh": "OAuth2 客户端密钥",
       "group": "auth",
       "constraints": {}
     },
@@ -371,6 +440,7 @@
       "type": "bool",
       "default": false,
       "description": "Allow configurable authentication via browser",
+      "description_zh": "是否启用可配置的认证流程",
       "group": "auth"
     },
     {
@@ -378,6 +448,7 @@
       "type": "bool",
       "default": false,
       "description": "Enable HTTPX debug logging",
+      "description_zh": "是否调试 HTTP 客户端通信内容",
       "group": "logging"
     },
     {
@@ -385,6 +456,7 @@
       "type": "bool",
       "default": false,
       "description": "Use device code OAuth flow",
+      "description_zh": "是否使用设备代码认证流程（无桌面环境推荐）",
       "group": "auth"
     },
     {
@@ -392,6 +464,7 @@
       "type": "bool",
       "default": false,
       "description": "Use Intune SSO for authentication",
+      "description_zh": "是否使用 Intune SSO 认证（企业环境）",
       "group": "auth"
     },
     {
@@ -399,6 +472,7 @@
       "type": "string",
       "default": "",
       "description": "Notify when usage exceeds threshold percentage",
+      "description_zh": "磁盘使用率阈值（超出则停止同步）",
       "group": "sync",
       "constraints": {}
     },
@@ -407,6 +481,7 @@
       "type": "string",
       "default": "",
       "description": "Custom user agent string",
+      "description_zh": "自定义 HTTP User-Agent 头",
       "group": "performance",
       "constraints": {}
     }
