@@ -3,8 +3,8 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileStore } from '@/stores/profile'
 import StatusBadge from '@/components/runtime/StatusBadge.vue'
-import { getRuntimeStatus, runtimeAction } from '@/api/runtime'
-import type { RuntimeStatus } from '@/api/runtime'
+import { getRuntimeLogs, getRuntimeStatus, runtimeAction } from '@/api/runtime'
+import type { LogEntry, RuntimeStatus } from '@/api/runtime'
 
 const profileStore = useProfileStore()
 const router = useRouter()
@@ -18,6 +18,7 @@ const activeProfile = computed(() => {
 })
 
 const runtime = ref<RuntimeStatus | null>(null)
+const recentLogs = ref<LogEntry[]>([])
 const acting = ref(false)
 const actError = ref<string | null>(null)
 let pollTimer: number | undefined
@@ -26,10 +27,79 @@ async function fetchStatus() {
   if (!activeProfile.value) return
   try {
     runtime.value = await getRuntimeStatus(activeProfile.value.id)
+    if (runtime.value?.state === 'running') {
+      const logs = await getRuntimeLogs(activeProfile.value.id, 25)
+      if (Array.isArray(logs)) {
+        recentLogs.value = logs
+      }
+    } else {
+      recentLogs.value = []
+    }
   } catch {
     runtime.value = null
   }
 }
+
+interface SyncActivity {
+  phase: 'idle' | 'syncing' | 'stopped' | 'starting'
+  label: string
+  lastSyncTime?: string
+  detail?: string
+}
+
+const syncActivity = computed<SyncActivity>(() => {
+  if (!runtime.value || runtime.value.state === 'stopped' || runtime.value.state === 'inactive') {
+    return { phase: 'stopped', label: '服务已停止' }
+  }
+  if (runtime.value.state === 'starting') {
+    return { phase: 'starting', label: '服务正在启动中...' }
+  }
+  if (runtime.value.state === 'failed') {
+    return { phase: 'stopped', label: '服务运行异常' }
+  }
+  if (recentLogs.value.length === 0) {
+    return {
+      phase: 'idle',
+      label: '空闲待命（实时监听中）',
+      detail: '守护进程正在通过 inotify 监听本地文件变动',
+    }
+  }
+
+  for (let i = recentLogs.value.length - 1; i >= 0; i--) {
+    const msg = recentLogs.value[i].message || ''
+    const ts = recentLogs.value[i].timestamp
+      ? new Date(recentLogs.value[i].timestamp).toLocaleTimeString()
+      : ''
+    if (msg.includes('Sync with Microsoft OneDrive is complete')) {
+      return {
+        phase: 'idle',
+        label: '空闲待命（已同步至最新）',
+        lastSyncTime: ts,
+        detail: '正在后台实时监听本地与云端变动',
+      }
+    }
+    if (
+      msg.includes('Starting a sync') ||
+      msg.includes('Syncing changes') ||
+      msg.includes('Fetching items') ||
+      msg.includes('Scanning the local file system') ||
+      msg.includes('Uploading') ||
+      msg.includes('Downloading')
+    ) {
+      return {
+        phase: 'syncing',
+        label: '正在同步与比对数据...',
+        detail: msg,
+      }
+    }
+  }
+
+  return {
+    phase: 'idle',
+    label: '空闲待命（实时监听中）',
+    detail: '正在后台实时监听本地与云端变动',
+  }
+})
 
 async function handleAction(action: 'start' | 'stop' | 'restart') {
   if (!activeProfile.value) return
@@ -113,6 +183,18 @@ onUnmounted(() => {
             <span class="meta-item"><span class="label">配置目录:</span> <code>{{ activeProfile.confdir }}</code></span>
             <span class="meta-item"><span class="label">运行服务:</span> <code>{{ activeProfile.runtime_target }}</code></span>
           </div>
+
+          <!-- 实时同步活动指示行 -->
+          <div v-if="runtime?.state === 'running'" class="sync-activity-row">
+            <span class="activity-pill" :class="syncActivity.phase">
+              <span class="activity-dot" />
+              <span class="activity-text">{{ syncActivity.label }}</span>
+            </span>
+            <span v-if="syncActivity.lastSyncTime" class="activity-time">
+              上次同步完成：<strong>{{ syncActivity.lastSyncTime }}</strong>
+            </span>
+            <span class="activity-hint">（守护服务后台待命中，实时监听文件变动）</span>
+          </div>
         </div>
 
         <!-- 启停快捷控制栏 -->
@@ -123,7 +205,7 @@ onUnmounted(() => {
             :disabled="acting || runtime?.state === 'starting'"
             @click="handleAction('start')"
           >
-            {{ acting || runtime?.state === 'starting' ? '启动中...' : '▶ 启动同步' }}
+            {{ acting || runtime?.state === 'starting' ? '启动中...' : '▶ 启动服务' }}
           </button>
           <button
             v-else
@@ -131,16 +213,21 @@ onUnmounted(() => {
             :disabled="acting"
             @click="handleAction('stop')"
           >
-            {{ acting ? '停止中...' : '⏹ 停止同步' }}
+            {{ acting ? '停止中...' : '⏹ 停止服务' }}
           </button>
           <button
             class="btn secondary"
             :disabled="acting"
             @click="handleAction('restart')"
           >
-            ↻ 重启
+            ↻ 重启服务
           </button>
         </div>
+      </div>
+
+      <!-- 守护进程机制说明条 -->
+      <div v-if="runtime?.state === 'running'" class="daemon-info-banner">
+        💡 <strong>运行机制说明</strong>：OneDrive 客户端作为 Linux 守护进程（Daemon）在后台持续驻留。当数据比对完成后，服务不会退出，而是处于<strong>“空闲待命”</strong>状态，通过 Linux 内核 <code>inotify</code> 秒级响应本地文件变动，有改动时自动同步，无需手动停止。
       </div>
 
       <div v-if="actError" class="act-error">
@@ -310,6 +397,81 @@ onUnmounted(() => {
 }
 .account-meta-row code {
   background: #f8fafc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.sync-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.activity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 12px;
+}
+.activity-pill.idle {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.activity-pill.syncing {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.activity-pill.starting {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+.activity-pill.stopped {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.activity-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.activity-pill.idle .activity-dot {
+  box-shadow: 0 0 6px #22c55e;
+}
+.activity-pill.syncing .activity-dot {
+  animation: pulse-dot 1.2s infinite;
+}
+@keyframes pulse-dot {
+  0% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.3; transform: scale(0.9); }
+}
+.activity-time {
+  color: #334155;
+}
+.activity-hint {
+  color: #94a3b8;
+  font-size: 12px;
+}
+.daemon-info-banner {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 12px 18px;
+  color: #0369a1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.daemon-info-banner code {
+  background: #e0f2fe;
   padding: 2px 6px;
   border-radius: 4px;
 }
