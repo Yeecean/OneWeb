@@ -101,16 +101,27 @@ const syncActivity = computed<SyncActivity>(() => {
   }
 })
 
-async function handleAction(action: 'start' | 'stop' | 'restart') {
+const syncingNow = ref(false)
+const syncFeedback = ref<string | null>(null)
+
+async function handleAction(action: 'start' | 'stop' | 'restart' | 'sync') {
   if (!activeProfile.value) return
   acting.value = true
   actError.value = null
+  if (action === 'sync') syncingNow.value = true
   try {
     runtime.value = await runtimeAction(activeProfile.value.id, action)
+    if (action === 'sync') {
+      syncFeedback.value = '⚡ 已触发立刻同步，正在与云端比对最新变动！'
+      setTimeout(() => { syncFeedback.value = null }, 4000)
+    }
+    setTimeout(fetchStatus, 500)
+    setTimeout(fetchStatus, 2000)
   } catch (e: any) {
     actError.value = e.message
   } finally {
     acting.value = false
+    syncingNow.value = false
   }
 }
 
@@ -205,7 +216,7 @@ onUnmounted(() => {
             :disabled="acting || runtime?.state === 'starting'"
             @click="handleAction('start')"
           >
-            {{ acting || runtime?.state === 'starting' ? '启动中...' : '▶ 启动服务' }}
+            {{ acting && !syncingNow || runtime?.state === 'starting' ? '启动中...' : '▶ 启动服务' }}
           </button>
           <button
             v-else
@@ -213,7 +224,15 @@ onUnmounted(() => {
             :disabled="acting"
             @click="handleAction('stop')"
           >
-            {{ acting ? '停止中...' : '⏹ 停止服务' }}
+            {{ acting && !syncingNow ? '停止中...' : '⏹ 停止服务' }}
+          </button>
+          <button
+            class="btn sync-btn"
+            :disabled="acting || runtime?.state === 'starting'"
+            @click="handleAction('sync')"
+            title="立即触发全量数据比对与同步"
+          >
+            {{ syncingNow ? '⚡ 正在触发...' : '⚡ 立刻同步' }}
           </button>
           <button
             class="btn secondary"
@@ -223,6 +242,11 @@ onUnmounted(() => {
             ↻ 重启服务
           </button>
         </div>
+      </div>
+
+      <!-- 同步操作反馈提示 -->
+      <div v-if="syncFeedback" class="sync-feedback-banner">
+        {{ syncFeedback }}
       </div>
 
       <!-- 守护进程机制说明条 -->
@@ -615,5 +639,29 @@ onUnmounted(() => {
 }
 .btn.secondary:hover {
   background: #e2e8f0;
+}
+.btn.sync-btn {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.btn.sync-btn:hover {
+  background: #1d4ed8;
+}
+.btn.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.sync-feedback-banner {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

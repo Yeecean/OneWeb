@@ -20,7 +20,7 @@ export async function getRuntimeStatus(profileId: string): Promise<RuntimeStatus
   return data
 }
 
-export async function runtimeAction(profileId: string, action: 'start' | 'stop' | 'restart'): Promise<RuntimeStatus> {
+export async function runtimeAction(profileId: string, action: 'start' | 'stop' | 'restart' | 'sync'): Promise<RuntimeStatus> {
   const { data } = await client.post(`/profiles/${profileId}/runtime/actions`, { action })
   return data
 }

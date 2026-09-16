@@ -122,9 +122,9 @@ func (h *OperationHandler) runCLIOperation(ctx context.Context, opID, confdir st
 	case operation.TypeDryRun:
 		args = append(args, "--dry-run")
 	case operation.TypeResync:
-		args = append(args, "--resync")
+		args = append(args, "--resync", "--sync")
 	case operation.TypeSync:
-		// 默认同步模式
+		args = append(args, "--sync")
 	case operation.TypeValidate:
 		args = append(args, "--display-config")
 	}

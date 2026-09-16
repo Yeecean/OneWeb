@@ -43,7 +43,7 @@ func (s *RuntimeService) GetStatus(ctx context.Context, p *profile.Profile) (*ru
 	return &st, nil
 }
 
-// ControlRuntime 控制运行时启停。action 仅接受 start/stop/restart。
+// ControlRuntime 控制运行时启停。action 仅接受 start/stop/restart/sync。
 func (s *RuntimeService) ControlRuntime(ctx context.Context, p *profile.Profile, action string) error {
 	b, err := s.backend(p)
 	if err != nil {
@@ -56,6 +56,12 @@ func (s *RuntimeService) ControlRuntime(ctx context.Context, p *profile.Profile,
 		return b.Stop(ctx, *p)
 	case "restart":
 		return b.Restart(ctx, *p)
+	case "sync":
+		st, err := b.Status(ctx, *p)
+		if err == nil && st.State == runtime.StateRunning {
+			return b.Restart(ctx, *p)
+		}
+		return b.Start(ctx, *p)
 	default:
 		return ErrInvalidAction
 	}

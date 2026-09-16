@@ -47,7 +47,7 @@ func (h *RuntimeHandler) Action(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.Runtime.ControlRuntime(r.Context(), p, req.Action); err != nil {
 		if err == application.ErrInvalidAction {
-			writeError(w, http.StatusBadRequest, "INVALID_ACTION", "action must be start|stop|restart", nil)
+			writeError(w, http.StatusBadRequest, "INVALID_ACTION", "action must be start|stop|restart|sync", nil)
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error(), nil)

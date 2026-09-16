@@ -35,12 +35,13 @@ async function loadLogs() {
   }
 }
 
-async function act(action: 'start' | 'stop' | 'restart') {
+async function act(action: 'start' | 'stop' | 'restart' | 'sync') {
   acting.value = true
   error.value = null
   try {
     status.value = await runtimeAction(id.value, action)
     setTimeout(loadLogs, 1000)
+    setTimeout(loadLogs, 2500)
   } catch (e: any) {
     error.value = e.message
   } finally {
@@ -75,10 +76,13 @@ onUnmounted(() => {
       </div>
       <div class="actions">
         <button class="btn ghost" :disabled="acting || status?.state === 'running' || status?.state === 'starting'" @click="act('start')">
-          {{ status?.state === 'starting' ? '启动中...' : '启动' }}
+          {{ status?.state === 'starting' ? '启动中...' : '启动服务' }}
         </button>
-        <button class="btn ghost" :disabled="acting || status?.state === 'stopped'" @click="act('stop')">停止</button>
-        <button class="btn ghost" :disabled="acting" @click="act('restart')">重启</button>
+        <button class="btn ghost" :disabled="acting || status?.state === 'stopped'" @click="act('stop')">停止服务</button>
+        <button class="btn ghost sync-ghost" :disabled="acting || status?.state === 'starting'" @click="act('sync')" title="立即与云端比对并同步">
+          ⚡ 立刻同步
+        </button>
+        <button class="btn ghost" :disabled="acting" @click="act('restart')">重启服务</button>
         <button class="btn ghost" @click="loadLogs">刷新日志</button>
       </div>
     </header>
@@ -125,6 +129,15 @@ onUnmounted(() => {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.btn.sync-ghost {
+  color: #2563eb;
+  border-color: #93c5fd;
+  font-weight: 500;
+}
+.btn.sync-ghost:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #60a5fa;
 }
 .error-banner {
   background: #fee2e2;
