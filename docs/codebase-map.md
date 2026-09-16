@@ -83,9 +83,10 @@ oneweb/
 │   │   ├── capability/version.go       # 客户端 SemVer 解析与兼容性特性矩阵
 │   │   └── event.go                    # 统一领域事件模型 DomainEvent
 │   ├── application/                    # 应用服务层：用例编排与跨基础设施事务控制
-│   │   ├── profile_service.go          # Profile CRUD 编排，环境自检
+│   │   ├── profile_service.go          # Profile CRUD 编排，环境自检与宿主机零配置自发现 (Auto-Discovery)
 │   │   ├── config_service.go           # 配置读取对比（文件/生效/默认）、沙箱验证、原子写入
-│   │   ├── runtime_service.go          # 守护进程启停路由分发、状态聚合
+│   │   ├── runtime_service.go          # 守护进程启停路由分发、状态聚合、即时同步 (Sync) 唤醒
+│   │   ├── runtime_service_test.go     # 运行时生命周期与即时同步完整单测
 │   │   ├── operation_service.go        # 异步工作单元生命周期、子进程挂接、事件发布
 │   │   ├── auth_service.go             # 交互式 OAuth 登录会话管理与终端管道写入
 │   │   └── sync_service.go             # SyncList 解析、语法校验与 Resync 预警联动
@@ -112,7 +113,7 @@ oneweb/
 │   │   │   └── signal_linux.go         # Linux 进程组 SIGTERM / SIGKILL 信号优雅中断
 │   │   ├── runtime/
 │   │   │   └── systemd/
-│   │   │       ├── backend.go          # systemctl --user 状态提取与启停控制
+│   │   │       ├── backend.go          # systemctl --user 状态提取与非阻塞启停 (--no-block)
 │   │   │       └── linger.go           # loginctl 探测当前用户 Linger 挂载状态
 │   │   ├── journal/
 │   │   │   └── streamer.go             # journalctl --user-unit JSON 格式流式监听管道
@@ -124,9 +125,9 @@ oneweb/
 │       │   ├── static.go               # embed.FS 静态文件服务与 SPA 路径回退兜底
 │       │   ├── helpers.go              # JSON 响应格式化与统一错误输出
 │       │   ├── system_handler.go       # GET /api/v1/system/*
-│       │   ├── profile_handler.go      # /api/v1/profiles/* CRUD
+│       │   ├── profile_handler.go      # /api/v1/profiles/* CRUD 与宿主机快速探测 POST /discover
 │       │   ├── config_handler.go       # GET/PUT /api/v1/profiles/{id}/config
-│       │   ├── runtime_handler.go      # GET/POST /api/v1/profiles/{id}/runtime/*
+│       │   ├── runtime_handler.go      # GET/POST /api/v1/profiles/{id}/runtime/* (start/stop/restart/sync)
 │       │   ├── operation_handler.go    # 异步操作创建、查询、取消与输入注入
 │       │   └── synclist_handler.go     # GET/PUT /api/v1/profiles/{id}/sync-list
 │       └── websocket/
@@ -140,9 +141,15 @@ oneweb/
 │   ├── src/
 │   │   ├── api/                        # 对应后端的 Axios / Fetch 接口客户端
 │   │   ├── stores/                     # Pinia 状态树 (profileStore, configStore)
-│   │   ├── views/                      # 核心视图 (Dashboard, ConfigEditor, Runtime, SyncList)
-│   │   ├── components/                 # SchemaForm 动态表单、LogViewer 终端、StatusBadge
+│   │   ├── views/                      # 核心视图 (Dashboard 单账户沉浸式看板、ConfigEditor、Runtime、SyncList)
+│   │   ├── components/                 # SchemaForm 动态表单、LogViewer 终端、StatusBadge 状态徽章
 │   │   └── router/index.ts             # 前端 SPA 路由
+├── docs/                               # 完整设计与规范文档集
+│   ├── architecture.md                 # 架构设计规范书 v4.0
+│   ├── codebase-map.md                 # 代码仓库全景地图与开发者指南
+│   ├── implementation-plan.md          # 8 个里程碑与 66 个构建步骤
+│   ├── user-guide.md                   # 完整用户使用说明书与常见故障排查
+│   └── feature_implementation_plan.md  # 配置管理双语化与选择性同步目录树功能设计计划
 ├── packaging/                          # 交付打包资产
 │   ├── systemd/oneweb.service          # User-level Systemd 模板
 │   └── docker/                         # Dockerfile 与 docker-compose 编排
@@ -225,34 +232,47 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Web as Vue3 前端 (RuntimeView)
+    actor Web as Vue3 前端 (Dashboard / RuntimeView)
     participant RH as RuntimeHandler
     participant RS as RuntimeService
     participant SB as SystemdBackend
     participant Systemd as systemd --user 守护服务
     participant Journal as journalctl JSON 流
 
-    Web->>RH: POST /api/v1/profiles/{id}/runtime/actions {"action": "restart"}
-    RH->>RS: ControlRuntime(profile, "restart")
-    RS->>SB: Restart(ctx, profile)
-    SB->>Systemd: systemctl --user restart <unit> (绝无 sudo)
+    Note over Web,Systemd: 控制动作：start / stop / restart / sync
+    Web->>RH: POST /api/v1/profiles/{id}/runtime/actions {"action": "sync"}
+    RH->>RS: ControlRuntime(profile, "sync")
+    alt 服务正在运行 (StateRunning)
+        RS->>SB: Restart(ctx, profile)
+    else 服务未运行 (StateStopped)
+        RS->>SB: Start(ctx, profile)
+    end
+    SB->>Systemd: systemctl --user <action> --no-block <unit> (绝无 sudo, 非阻塞秒级响应)
     Systemd-->>SB: 退出码 0
     SB-->>RS: 执行成功
     RS->>SB: Status(ctx, profile)
-    SB->>Systemd: systemctl --user show <unit> --property=ActiveState,MainPID...
-    Systemd-->>SB: 属性键值对
-    SB-->>RS: RuntimeStatus{ State: "running", PID: 12345 }
+    SB->>Systemd: systemctl --user show <unit> --property=ActiveState,SubState,MainPID...
+    Systemd-->>SB: 属性键值对 (activating 映射为 StateStarting, active 映射为 StateRunning)
+    SB-->>RS: RuntimeStatus{ State: "starting" / "running", PID: 12345 }
     RS-->>RH: 状态返回
     RH-->>Web: 200 OK + 最新状态
 
-    Note over Web,Journal: 日志查看请求
-    Web->>RH: GET /api/v1/profiles/{id}/runtime/logs?lines=200
-    RH->>RS: GetRecentLogs(profile, 200)
-    RS->>Journal: journalctl --user-unit=<unit> -n 200 -o json
+    Note over Web,Journal: 日志与活动状态实时分析
+    Web->>RH: GET /api/v1/profiles/{id}/runtime/logs?lines=25
+    RH->>RS: StreamLogs(profile, opts)
+    RS->>Journal: journalctl --user-unit=<unit> -n 25 -o json
     Journal-->>RS: 解析结构化 LogEntry
-    RS-->>RH: []LogEntry
+    RS-->>RH: []LogEntry (标准 JSON 数组聚合)
     RH-->>Web: 200 OK
+    Note over Web: 前端提取最新同步事件，呈现「空闲待命」或「同步中」细分活动徽章
 ```
+
+> [!TIP]
+> **性能优化关键点**：
+> 1. **`--no-block` 标志**：在 `systemctl --user start/restart` 中加入 `--no-block`，彻底消除 systemd 启动握手阻塞，API 响应时间从 15 秒缩减到 20ms。
+> 2. **Fedora 延迟消除**：通过 `~/.config/systemd/user/onedrive.service.d/override.conf` 覆盖清空了 Fedora 官方 unit 自带的 `ExecStartPre=/bin/sh -c 'sleep 15'`，实现 0.013s 瞬时拉起。
+> 3. **过渡状态建模**：引入 `StateStarting = "starting"`，准确捕获 `ActiveState=activating`，避免轮询黑洞。
+
 
 ---
 
