@@ -112,9 +112,11 @@ onMounted(() => configStore.load(id.value))
         <span v-if="configStore.config.file_exists" class="meta">
           指纹 {{ baseSha.slice(0, 12) }}… · 最近修改 {{ new Date(configStore.config.version_meta?.mtime || '').toLocaleString() }}
         </span>
-        <span v-else class="meta">配置文件尚不存在，保存将创建</span>
+        <span v-else class="meta new-config-hint">
+          📄 使用全默认值初始化配置文件——点击保存后将自动创建 <code>config</code> 文件
+        </span>
         <button class="btn primary" :disabled="saving" @click="doSave">
-          {{ saving ? '保存中...' : '保存配置' }}
+          {{ saving ? '保存中...' : (configStore.config.file_exists ? '保存配置' : '创建并保存') }}
         </button>
       </div>
     </template>
@@ -197,6 +199,19 @@ onMounted(() => configStore.load(id.value))
 .meta {
   color: #64748b;
   font-size: 13px;
+}
+.new-config-hint {
+  color: #0369a1;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+.new-config-hint code {
+  background: #bae6fd;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 .btn {
   padding: 10px 22px;
