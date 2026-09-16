@@ -14,6 +14,7 @@ type RuntimeState string
 
 const (
 	StateRunning  RuntimeState = "running"
+	StateStarting RuntimeState = "starting"
 	StateStopped  RuntimeState = "stopped"
 	StateFailed   RuntimeState = "failed"
 	StateInactive RuntimeState = "inactive"

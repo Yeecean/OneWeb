@@ -27,5 +27,22 @@ export async function runtimeAction(profileId: string, action: 'start' | 'stop' 
 
 export async function getRuntimeLogs(profileId: string, lines = 100): Promise<LogEntry[]> {
   const { data } = await client.get(`/profiles/${profileId}/runtime/logs?lines=${lines}`)
-  return data
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (typeof data === 'string') {
+    return data
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        try {
+          return JSON.parse(l)
+        } catch {
+          return null
+        }
+      })
+      .filter((e): e is LogEntry => e !== null)
+  }
+  return []
 }

@@ -80,7 +80,12 @@ func (b *Backend) Restart(ctx context.Context, p profile.Profile) error {
 
 func (b *Backend) action(ctx context.Context, p profile.Profile, verb string) error {
 	unit := b.unit(p)
-	cmd := exec.CommandContext(ctx, "systemctl", "--user", verb, unit)
+	args := []string{"--user", verb}
+	if verb == "start" || verb == "restart" {
+		args = append(args, "--no-block")
+	}
+	args = append(args, unit)
+	cmd := exec.CommandContext(ctx, "systemctl", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("systemd: %s %s failed: %s: %w", verb, unit, strings.TrimSpace(string(out)), err)
@@ -110,6 +115,8 @@ func parseStatus(out string) (runtime.RuntimeStatus, error) {
 	switch kv["ActiveState"] {
 	case "active":
 		rs.State = runtime.StateRunning
+	case "activating":
+		rs.State = runtime.StateStarting
 	case "failed":
 		rs.State = runtime.StateFailed
 	case "inactive", "deactivating":

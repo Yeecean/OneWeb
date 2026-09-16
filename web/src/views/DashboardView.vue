@@ -120,10 +120,10 @@ onUnmounted(() => {
           <button
             v-if="runtime?.state !== 'running'"
             class="btn primary"
-            :disabled="acting"
+            :disabled="acting || runtime?.state === 'starting'"
             @click="handleAction('start')"
           >
-            {{ acting ? '启动中...' : '▶ 启动同步' }}
+            {{ acting || runtime?.state === 'starting' ? '启动中...' : '▶ 启动同步' }}
           </button>
           <button
             v-else

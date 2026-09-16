@@ -26,9 +26,12 @@ async function refresh() {
 
 async function loadLogs() {
   try {
-    logs.value = await getRuntimeLogs(id.value, 200)
-  } catch {
-    // 日志流不可用时忽略
+    const fetched = await getRuntimeLogs(id.value, 200)
+    if (fetched && Array.isArray(fetched)) {
+      logs.value = fetched
+    }
+  } catch (e: any) {
+    console.error('loadLogs failed:', e)
   }
 }
 
@@ -37,7 +40,7 @@ async function act(action: 'start' | 'stop' | 'restart') {
   error.value = null
   try {
     status.value = await runtimeAction(id.value, action)
-    setTimeout(loadLogs, 500)
+    setTimeout(loadLogs, 1000)
   } catch (e: any) {
     error.value = e.message
   } finally {
@@ -48,7 +51,10 @@ async function act(action: 'start' | 'stop' | 'restart') {
 onMounted(() => {
   refresh()
   loadLogs()
-  pollTimer = window.setInterval(refresh, 3000)
+  pollTimer = window.setInterval(() => {
+    refresh()
+    loadLogs()
+  }, 3000)
 })
 
 onUnmounted(() => {
@@ -68,7 +74,9 @@ onUnmounted(() => {
         </span>
       </div>
       <div class="actions">
-        <button class="btn ghost" :disabled="acting || status?.state === 'running'" @click="act('start')">启动</button>
+        <button class="btn ghost" :disabled="acting || status?.state === 'running' || status?.state === 'starting'" @click="act('start')">
+          {{ status?.state === 'starting' ? '启动中...' : '启动' }}
+        </button>
         <button class="btn ghost" :disabled="acting || status?.state === 'stopped'" @click="act('stop')">停止</button>
         <button class="btn ghost" :disabled="acting" @click="act('restart')">重启</button>
         <button class="btn ghost" @click="loadLogs">刷新日志</button>

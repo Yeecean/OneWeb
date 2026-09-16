@@ -74,12 +74,24 @@ func (h *RuntimeHandler) Logs(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error(), nil)
 		return
 	}
-	w.Header().Set("Content-Type", "application/x-ndjson")
-	w.WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(w)
-	for entry := range ch {
-		_ = enc.Encode(entry)
+	if opts.Follow {
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		w.WriteHeader(http.StatusOK)
+		enc := json.NewEncoder(w)
+		for entry := range ch {
+			_ = enc.Encode(entry)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		}
+		return
 	}
+
+	entries := make([]runtime.LogEntry, 0)
+	for entry := range ch {
+		entries = append(entries, entry)
+	}
+	writeJSON(w, http.StatusOK, entries)
 }
 
 func parseIntSafe(s string) int {

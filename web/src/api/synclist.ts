@@ -32,7 +32,11 @@ export interface SyncListResponse {
 
 export async function getSyncList(profileId: string): Promise<SyncListResponse> {
   const { data } = await client.get(`/profiles/${profileId}/sync-list`)
-  return data
+  return {
+    ...data,
+    rules: data?.rules || [],
+    warnings: data?.warnings || [],
+  }
 }
 
 export async function saveSyncList(
@@ -40,5 +44,9 @@ export async function saveSyncList(
   req: { source: string; base_sha256: string },
 ): Promise<SyncListResponse> {
   const { data } = await client.put(`/profiles/${profileId}/sync-list`, req)
-  return data
+  return {
+    ...data,
+    rules: data?.rules || [],
+    warnings: data?.warnings || [],
+  }
 }

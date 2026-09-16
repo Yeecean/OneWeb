@@ -67,7 +67,7 @@ onMounted(load)
         ⚠️ 修改同步规则后必须执行全量重同步 (--resync) 才能生效
       </div>
 
-      <div class="warnings" v-if="data.warnings.length">
+      <div class="warnings" v-if="data.warnings && data.warnings.length">
         <div v-for="(w, i) in data.warnings" :key="i" class="warning" :class="w.level">
           <span class="w-badge">{{ w.level }}</span>
           L{{ w.line }} · {{ w.rule }}
@@ -75,9 +75,9 @@ onMounted(load)
         </div>
       </div>
 
-      <textarea v-model="source" class="editor" spellcheck="false"></textarea>
+      <textarea v-model="source" class="editor" spellcheck="false" placeholder="# 在此输入选择性同步规则，例如:&#10;/Documents/*&#10;!/Documents/temp/*"></textarea>
 
-      <div class="rules-preview" v-if="data.rules.length">
+      <div class="rules-preview" v-if="data.rules && data.rules.length">
         <h4>规则模型 ({{ data.rules.length }} 行)</h4>
         <div v-for="(r, i) in data.rules" :key="i" class="rule-row" :class="r.type">
           <span class="ln">{{ r.line_number }}</span>

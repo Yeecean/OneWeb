@@ -49,7 +49,12 @@ func syncListPath(confdir string) string {
 
 // GetSyncList 读取并解析 sync_list。
 func (s *SyncService) GetSyncList(confdir string) (*SyncListResponse, error) {
-	resp := &SyncListResponse{Source: "", Rules: []sync.SyncRule{}, ResyncRequired: false}
+	resp := &SyncListResponse{
+		Source:         "",
+		Rules:          []sync.SyncRule{},
+		Warnings:       []configparser.ValidationWarning{},
+		ResyncRequired: false,
+	}
 	path := syncListPath(confdir)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -73,7 +78,11 @@ func (s *SyncService) GetSyncList(confdir string) (*SyncListResponse, error) {
 		return nil, err
 	}
 	resp.Rules = set.Rules
-	resp.Warnings = configparser.ValidateSyncList(set)
+	warnings := configparser.ValidateSyncList(set)
+	if warnings == nil {
+		warnings = []configparser.ValidationWarning{}
+	}
+	resp.Warnings = warnings
 	return resp, nil
 }
 
@@ -97,6 +106,9 @@ func (s *SyncService) SaveSyncList(confdir string, req SaveSyncListRequest) (*Sy
 		return nil, err
 	}
 	warnings := configparser.ValidateSyncList(set)
+	if warnings == nil {
+		warnings = []configparser.ValidationWarning{}
+	}
 
 	if err := os.MkdirAll(confdir, 0o755); err != nil {
 		return nil, err
