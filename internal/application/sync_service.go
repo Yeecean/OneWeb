@@ -125,3 +125,103 @@ func (s *SyncService) SaveSyncList(confdir string, req SaveSyncListRequest) (*Sy
 		ResyncRequired: true,
 	}, nil
 }
+
+// DirNode 表示目录树的一个节点。
+type DirNode struct {
+	Name     string    `json:"name"`
+	Path     string    `json:"path"` // 相对于 sync_dir 的路径，如 /Documents
+	IsDir    bool      `json:"is_dir"`
+	Children []DirNode `json:"children,omitempty"`
+}
+
+// ScanLocalTree 扫描本地 sync_dir 目录树，最多 maxDepth 层。
+// sync_dir 从配置文件读取，默认为 ~/OneDrive。
+// 只扫描目录，跳过隐藏目录（以 . 开头），不依赖网络。
+func (s *SyncService) ScanLocalTree(confdir string, maxDepth int) ([]DirNode, error) {
+	if maxDepth <= 0 {
+		maxDepth = 3
+	}
+	syncDir := s.resolveSyncDir(confdir)
+	if syncDir == "" {
+		return []DirNode{}, nil
+	}
+	if _, err := os.Stat(syncDir); err != nil {
+		if os.IsNotExist(err) {
+			return []DirNode{}, nil
+		}
+		return nil, err
+	}
+	nodes, err := scanDir(syncDir, syncDir, 0, maxDepth)
+	if err != nil {
+		return nil, err
+	}
+	if nodes == nil {
+		nodes = []DirNode{}
+	}
+	return nodes, nil
+}
+
+// resolveSyncDir 读取 confdir/config 获取 sync_dir，失败则返回 ~/OneDrive。
+func (s *SyncService) resolveSyncDir(confdir string) string {
+	const defaultSyncDir = "~/OneDrive"
+	value := defaultSyncDir
+
+	path := filepath.Join(confdir, "config")
+	if f, err := os.Open(path); err == nil {
+		if doc, perr := configparser.Parse(f); perr == nil {
+			if n := doc.Get("sync_dir"); n != nil && n.Value != "" {
+				value = n.Value
+			}
+		}
+		f.Close()
+	}
+	return expandHome(value)
+}
+
+// expandHome 将前导 ~ 展开为用户主目录。
+func expandHome(p string) string {
+	if p == "~" || strings.HasPrefix(p, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			if p == "~" {
+				return home
+			}
+			return filepath.Join(home, p[2:])
+		}
+	}
+	return p
+}
+
+// scanDir 递归扫描目录，Path 使用相对于 baseDir 的格式（以 / 开头）。
+func scanDir(baseDir, currentDir string, depth, maxDepth int) ([]DirNode, error) {
+	if depth >= maxDepth {
+		return nil, nil
+	}
+	entries, err := os.ReadDir(currentDir)
+	if err != nil {
+		return nil, nil
+	}
+	var nodes []DirNode
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		// 跳过隐藏目录
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		full := filepath.Join(currentDir, e.Name())
+		rel, relErr := filepath.Rel(baseDir, full)
+		if relErr != nil {
+			continue
+		}
+		relPath := "/" + filepath.ToSlash(rel)
+		children, _ := scanDir(baseDir, full, depth+1, maxDepth)
+		nodes = append(nodes, DirNode{
+			Name:     e.Name(),
+			Path:     relPath,
+			IsDir:    true,
+			Children: children,
+		})
+	}
+	return nodes, nil
+}

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { getSyncList, saveSyncList } from '@/api/synclist'
-import type { SyncListResponse } from '@/api/synclist'
+import { getSyncList, saveSyncList, getSyncListTree } from '@/api/synclist'
+import type { SyncListResponse, DirNode } from '@/api/synclist'
+import DirTreeBrowser from '@/components/sync/DirTreeBrowser.vue'
 
 const route = useRoute()
 const id = computed(() => route.params.id as string)
@@ -13,6 +14,9 @@ const loading = ref(true)
 const saving = ref(false)
 const saved = ref(false)
 const error = ref<string | null>(null)
+
+const treeNodes = ref<DirNode[]>([])
+const treeLoading = ref(false)
 
 const baseSha = computed(() => data.value?.version_meta?.sha256 || '')
 
@@ -27,6 +31,25 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+async function loadTree() {
+  treeLoading.value = true
+  try {
+    treeNodes.value = await getSyncListTree(id.value, 3)
+  } catch (e) {
+    // 静默失败，树面板为空
+    treeNodes.value = []
+  } finally {
+    treeLoading.value = false
+  }
+}
+
+// appendRule 将新规则追加到编辑器，避免重复
+function appendRule(rule: string) {
+  const existing = source.value.split('\n').map((l) => l.trim())
+  if (existing.includes(rule)) return
+  source.value = source.value ? source.value.replace(/\s*$/, '') + '\n' + rule : rule
 }
 
 async function doSave() {
@@ -47,7 +70,10 @@ async function doSave() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  loadTree()
+})
 </script>
 
 <template>
@@ -60,8 +86,14 @@ onMounted(load)
     </header>
 
     <div v-if="loading" class="state">加载中...</div>
-    <div v-else-if="error" class="error-banner">{{ error }}</div>
+    <div v-else-if="error && !data" class="error-banner">{{ error }}</div>
     <template v-else-if="data">
+      <div class="rule-legend">
+        <span class="legend-item include"><code>/路径</code> — 仅同步此路径</span>
+        <span class="legend-item exclude"><code>!/路径</code> — 排除此路径</span>
+        <span class="legend-item comment"><code>#注释</code> — 注释行，不生效</span>
+      </div>
+
       <div v-if="saved" class="banner ok">已保存</div>
       <div v-if="data.resync_required" class="banner warn">
         ⚠️ 修改同步规则后必须执行全量重同步 (--resync) 才能生效
@@ -75,13 +107,32 @@ onMounted(load)
         </div>
       </div>
 
-      <textarea v-model="source" class="editor" spellcheck="false" placeholder="# 在此输入选择性同步规则，例如:&#10;/Documents/*&#10;!/Documents/temp/*"></textarea>
+      <div class="split-layout">
+        <div class="editor-pane">
+          <h3 class="pane-title">📝 规则编辑器</h3>
+          <textarea
+            v-model="source"
+            class="editor"
+            spellcheck="false"
+            placeholder="# 在此输入选择性同步规则，例如:&#10;/Documents/*&#10;!/Documents/temp/*"
+          ></textarea>
 
-      <div class="rules-preview" v-if="data.rules && data.rules.length">
-        <h4>规则模型 ({{ data.rules.length }} 行)</h4>
-        <div v-for="(r, i) in data.rules" :key="i" class="rule-row" :class="r.type">
-          <span class="ln">{{ r.line_number }}</span>
-          <code>{{ r.raw_text }}</code>
+          <div class="rules-preview" v-if="data.rules && data.rules.length">
+            <h4>规则模型 ({{ data.rules.length }} 行)</h4>
+            <div v-for="(r, i) in data.rules" :key="i" class="rule-row" :class="r.type">
+              <span class="ln">{{ r.line_number }}</span>
+              <code>{{ r.raw_text }}</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="tree-pane">
+          <div class="pane-header">
+            <h3 class="pane-title">📂 本地目录浏览</h3>
+            <button class="btn-icon" title="刷新目录树" @click="loadTree">🔄</button>
+          </div>
+          <p class="pane-desc">浏览已同步的本地目录，点击按钮快速生成规则</p>
+          <DirTreeBrowser :nodes="treeNodes" :loading="treeLoading" @add-rule="appendRule" />
         </div>
       </div>
     </template>
@@ -215,5 +266,83 @@ onMounted(load)
 }
 .btn.primary:disabled {
   opacity: 0.6;
+}
+.rule-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--oneweb-border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-item code {
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.legend-item.include code {
+  background: #dcfce7;
+  color: #15803d;
+}
+.legend-item.exclude code {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.legend-item.comment code {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.split-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.editor-pane,
+.tree-pane {
+  background: #fff;
+  border: 1px solid var(--oneweb-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pane-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.pane-desc {
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+.btn-icon {
+  border: 1px solid var(--oneweb-border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-icon:hover {
+  background: #f8fafc;
 }
 </style>

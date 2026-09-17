@@ -64,6 +64,7 @@ func NewRouter(deps *Dependencies) http.Handler {
 				r.Post("/operations", opH.Create)
 				r.Get("/sync-list", syncH.Get)
 				r.Put("/sync-list", syncH.Put)
+				r.Get("/sync-list/tree", syncH.Tree)
 			})
 		})
 		r.Route("/operations", func(r chi.Router) {

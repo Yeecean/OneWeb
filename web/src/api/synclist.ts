@@ -50,3 +50,15 @@ export async function saveSyncList(
     warnings: data?.warnings || [],
   }
 }
+
+export interface DirNode {
+  name: string
+  path: string // 相对路径，如 /Documents
+  is_dir: boolean
+  children?: DirNode[]
+}
+
+export async function getSyncListTree(profileId: string, depth = 3): Promise<DirNode[]> {
+  const { data } = await client.get(`/profiles/${profileId}/sync-list/tree?depth=${depth}`)
+  return data?.tree || []
+}

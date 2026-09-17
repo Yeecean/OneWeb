@@ -3,6 +3,7 @@ package rest
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -52,4 +53,25 @@ func (h *SyncListHandler) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// Tree 处理 GET /api/v1/profiles/{id}/sync-list/tree。
+func (h *SyncListHandler) Tree(w http.ResponseWriter, r *http.Request) {
+	p, err := h.Profiles.GetProfile(chi.URLParam(r, "profileID"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "profile not found", nil)
+		return
+	}
+	maxDepth := 3
+	if d := r.URL.Query().Get("depth"); d != "" {
+		if parsed, perr := strconv.Atoi(d); perr == nil && parsed > 0 && parsed <= 5 {
+			maxDepth = parsed
+		}
+	}
+	nodes, err := h.Sync.ScanLocalTree(p.ConfDir, maxDepth)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error(), nil)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{"tree": nodes})
 }
